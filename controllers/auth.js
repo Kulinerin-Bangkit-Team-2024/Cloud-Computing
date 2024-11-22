@@ -13,7 +13,7 @@ const registerUser = async (req, res) => {
 
     const message = result[0]?.[0]?.message;
 
-    if (message === 'Registration Successful') {
+    if (message === 'Registration successful') {
       res.status(200).json({
         message,
         user: { name, email },
@@ -40,7 +40,7 @@ const loginUser = async (req, res) => {
     const user = result[0]?.[0];
     const { user_id, user_name, user_email, message } = user;
 
-    if (message === 'Login successfull') {
+    if (message === 'Login successful') {
       const tokenPayload = { user_id, user_email: email };
       const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '1h' });
 
