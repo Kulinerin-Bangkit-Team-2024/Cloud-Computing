@@ -12,9 +12,12 @@ const getUserById = async (req, res) => {
       });
     }
 
-    const result = await query("CALL GetUserById(?);", [userId]);
+    const result = await query(
+      "SELECT user_id, name, email FROM users WHERE user_id = ?",
+      [userId]
+    );
 
-    const user = result[0]?.[0];
+    const user = result[0];
 
     if (user) {
       res.status(200).json({
@@ -50,27 +53,39 @@ const editUserProfile = async (req, res) => {
       });
     }
 
-    const hashedPass = bcrypt.hashSync(pass, 8);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid email format. Please provide a valid email address.",
+      });
+    }
 
-    const result = await query("CALL EditUserProfile(?, ?, ?, ?);", [
-      userId,
-      name,
-      email,
-      hashedPass,
-    ]);
+    const existingUser = await query(
+      "SELECT user_id FROM users WHERE email = ? AND user_id != ?",
+      [email, userId]
+    );
 
-    const message = result?.[0]?.[0]?.message;
+    if (existingUser.length > 0) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "The email address you provided is already in use. Please choose a different one.",
+      });
+    }
 
-    if (message === "Profile updated successfully") {
+    const hashedPass = bcrypt.hashSync(pass, 10);
+
+    const result = await query(
+      "UPDATE users SET name = ?, email = ?, pass = ? WHERE user_id = ?",
+      [name, email, hashedPass, userId]
+    );
+
+    if (result.affectedRows > 0) {
       res.status(200).json({
         status: "success",
         message: "Your profile has been successfully updated.",
         user: { user_id: userId, name, email },
-      });
-    } else if (message === "Email is already in use by another user") {
-      res.status(400).json({
-        status: "error",
-        message: "The email address you provided is already in use. Please choose a different one.",
       });
     } else {
       res.status(400).json({
