@@ -25,7 +25,7 @@ app.get("/test", async (req, res) => {
   }
 });
 
-app.use("/auth", routes);
+app.use("/", routes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port: http://localhost:${PORT}/`);
