@@ -6,7 +6,10 @@ const getUserById = async (req, res) => {
 
   try {
     if (!userId) {
-      return res.status(400).json({ error: "User ID is required" });
+      return res.status(400).json({
+        status: "error",
+        message: "User ID is missing. Please ensure you are logged in and provide a valid token.",
+      });
     }
 
     const result = await query("CALL GetUserById(?);", [userId]);
@@ -15,6 +18,7 @@ const getUserById = async (req, res) => {
 
     if (user) {
       res.status(200).json({
+        status: "success",
         message: "User retrieved successfully",
         user: {
           user_id: user.user_id,
@@ -23,11 +27,14 @@ const getUserById = async (req, res) => {
         },
       });
     } else {
-      res.status(404).json({ error: "User not found" });
+      res.status(404).json({
+        status: "error",
+        message: "User not found. Please ensure the provided user ID is correct.",
+      });
     }
   } catch (err) {
     console.error("Error:", err.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ status: "error", message: "Internal Server Error" });
   }
 };
 
@@ -37,7 +44,10 @@ const editUserProfile = async (req, res) => {
 
   try {
     if (!userId || !name || !email || !pass) {
-      return res.status(400).json({ error: "All fields are required" });
+      return res.status(400).json({
+        status: "error",
+        message: "All fields (name, email, and password) are required to update your profile.",
+      });
     }
 
     const hashedPass = bcrypt.hashSync(pass, 8);
@@ -53,17 +63,24 @@ const editUserProfile = async (req, res) => {
 
     if (message === "Profile updated successfully") {
       res.status(200).json({
-        message,
+        status: "success",
+        message: "Your profile has been successfully updated.",
         user: { user_id: userId, name, email },
       });
     } else if (message === "Email is already in use by another user") {
-      res.status(400).json({ error: message });
+      res.status(400).json({
+        status: "error",
+        message: "The email address you provided is already in use. Please choose a different one.",
+      });
     } else {
-      res.status(400).json({ error: message || "Failed to update profile" });
+      res.status(400).json({
+        status: "error",
+        message: "Failed to update profile. Please try again later.",
+      });
     }
   } catch (err) {
     console.error("Error:", err.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ status: "error", message: "Internal Server Error" });
   }
 };
 
