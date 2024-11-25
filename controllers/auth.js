@@ -70,6 +70,13 @@ const loginUser = async (req, res) => {
 
     const result = await query("SELECT * FROM users WHERE email = ?", [email]);
 
+    if (result.length === 0) {
+      return res.status(401).json({
+        status: "error",
+        message: "Invalid email or password. Please check your credentials.",
+      });
+    }
+
     const user = result[0];
 
     if (user) {

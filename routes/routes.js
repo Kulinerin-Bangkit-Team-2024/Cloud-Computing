@@ -8,6 +8,9 @@ const authenticateToken = require("../middleware/checkAuth");
 //Auth
 router.post("/register", registerUser);
 router.post("/login", loginUser);
+// router.put("forgot-password", forgotPassword);
+// router.put("reset-password", resetPassword);
+// router.put("change-password", changePassword);
 
 //User
 router.get("/user/profile", authenticateToken, getUserById);
