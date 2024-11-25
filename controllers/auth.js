@@ -46,10 +46,6 @@ const registerUser = async (req, res) => {
       message: "Registration completed successfully. Welcome to KulinerIn!",
       user: { name, email },
     });
-    res.status(400).json({
-      status: "error",
-      message: "Failed to register user. Please try again later.",
-    });
   } catch (err) {
     console.error("Error:", err.message);
     res
