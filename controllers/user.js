@@ -78,11 +78,13 @@ const editUserProfile = [
       }
 
       const existingUser = await query(
-        "SELECT user_id FROM users WHERE email = ? AND user_id != ?",
-        [email, userId]
+        "SELECT user_id FROM users WHERE email = ?",
+        [email]
       );
-
-      if (existingUser.length > 0) {
+      if (
+        existingUser.length > 0 &&
+        existingUser[0].user_id !== userId
+      ) {
         return res.status(400).json({
           status: "error",
           message:
