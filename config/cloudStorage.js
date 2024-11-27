@@ -1,8 +1,10 @@
 const { Storage } = require("@google-cloud/storage");
-const { nanoid } = require("nanoid");
+const { v4: uuidv4 } = require("uuid");
 const multer = require("multer");
+const path = require("path");
 
-const gcs = new Storage();
+const keyFilePath = path.resolve(__dirname, "../key.json");
+const gcs = new Storage({ keyFilename: keyFilePath });
 const bucketName = process.env.BUCKET_NAME;
 
 if (!bucketName) {
@@ -16,17 +18,33 @@ function getPublicUrl(filename) {
 }
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      const error = new Error("Only .jpg, .jpeg, and .png files are allowed.");
+      error.statusCode = 400;
+      return cb(error);
+    }
+    cb(null, true);
+  },
+});
 
-let ImgUpload = {};
+const ImgUpload = {};
 
-ImgUpload.uploadToGcs = upload.single("image");
+ImgUpload.uploadToGcs = upload.single("profile_pic");
 
 ImgUpload.handleUpload = async (req, res, next) => {
-  if (!req.file) return next();
+  if (!req.file) {
+    return res.status(400).json({
+      status: "error",
+      message: "No file provided. Please upload a valid image.",
+    });
+  }
 
   const sanitizeFileName = (name) => name.replace(/[^a-z0-9.\-_]/gi, "_");
-  const gcsname = `${nanoid()}-${sanitizeFileName(req.file.originalname)}`;
+  const gcsname = `${uuidv4()}-${sanitizeFileName(req.file.originalname)}`;
   const file = bucket.file(gcsname);
 
   try {
@@ -43,25 +61,22 @@ ImgUpload.handleUpload = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Error uploading file:", error.message);
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
       message: "Failed to upload file to Google Cloud Storage.",
+      error: error.message,
     });
   }
 };
 
-ImgUpload.uploadResponse = (req, res) => {
-  if (req.file && req.file.cloudStoragePublicUrl) {
-    return res.status(200).json({
-      status: "success",
-      message: "File uploaded successfully!",
-      fileUrl: req.file.cloudStoragePublicUrl,
+ImgUpload.multerErrorHandler = (err, req, res, next) => {
+  if (err instanceof multer.MulterError || err.statusCode === 400) {
+    return res.status(err.statusCode).json({
+      status: "error",
+      message: err.message || "File upload error. Please try again.",
     });
   }
-  res.status(400).json({
-    status: "error",
-    message: "Failed to upload file.",
-  });
+  next(err);
 };
 
 module.exports = ImgUpload;
