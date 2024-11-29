@@ -2,6 +2,7 @@ const { query } = require("../config/dataBase");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
+const nodemailer = require("nodemailer");
 
 const registerUser = async (req, res) => {
   const { name, email, pass } = req.body;
@@ -142,4 +143,169 @@ const logoutUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, logoutUser };
+const sendResetPasswordOTP = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    if (!email) {
+      return res.status(400).json({
+        status: "error",
+        message: "Email is required to request a password reset",
+      });
+    }
+
+    const userResult = await query("SELECT * FROM users WHERE email = ?", [
+      email,
+    ]);
+
+    if (userResult.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "No user found with this email address",
+      });
+    }
+
+    const user = userResult[0];
+    const userId = user.user_id;
+
+    const existingOtp = await query(
+      "SELECT * FROM password_reset_otp WHERE user_id = ? AND is_used = false",
+      [userId]
+    );
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    if (existingOtp.length > 0) {
+      await query(
+        "UPDATE password_reset_otp SET otp = ?, expires_at = ? WHERE user_id = ?",
+        [otp, expiresAt, userId]
+      );
+    } else {
+      await query(
+        "INSERT INTO password_reset_otp (user_id, otp, expires_at) VALUES (?, ?, ?)",
+        [userId, otp, expiresAt]
+      );
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Password Reset OTP",
+      text: `Your OTP for password reset is: ${otp}. It will expire in 5 minutes.`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({
+      status: "success",
+      message: "OTP sent to your email address. Please check your inbox.",
+    });
+  } catch (err) {
+    console.error("Error:", err.message);
+
+    if (err.message.includes("ENOTFOUND")) {
+      return res.status(500).json({
+        status: "error",
+        message: "Network error. Please try again later.",
+      });
+    }
+
+    res.status(500).json({
+      status: "error",
+      message: "Failed to send OTP. Please try again later.",
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const { email, otp, newpass } = req.body;
+  
+  if (!email || !otp || !newpass) {
+    return res.status(400).json({
+      status: "error",
+      message: "Email, OTP and new password are required to reset password",
+    });
+  }
+
+  try {
+    const userResult = await query("SELECT * FROM users WHERE email = ?", [
+      email,
+    ]);
+
+    if (userResult.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "No user found with this email address",
+      });
+    }
+
+    const user = userResult[0];
+    const userId = user.user_id;
+
+    const otpResult = await query(
+      "SELECT * FROM password_reset_otp WHERE user_id = ? AND otp = ? AND is_used = false",
+      [userId, otp]
+    );
+
+    if (otpResult.length === 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid OTP. Please check your email and try again.",
+      });
+    }
+
+    const otpRecord = otpResult[0];
+    const expiresAt = new Date(otpRecord.expires_at);
+
+    if (expiresAt < new Date()) {
+      return res.status(400).json({
+        status: "error",
+        message: "OTP has expired. Please request a new OTP.",
+      });
+    }
+
+    const hashedPass = await bcrypt.hash(newpass, 10);
+
+    await query("UPDATE users SET pass = ? WHERE user_id = ?", [
+      hashedPass,
+      userId,
+    ]);
+
+    await query(
+      "UPDATE password_reset_otp SET is_used = true WHERE user_id = ? AND otp = ?",
+      [userId, otp]
+    );
+
+    res.status(200).json({
+      status: "success",
+      message:
+        "Password reset successful. You can now login with your new password.",
+    });
+  } catch (err) {
+    console.error("Error:", err.message);
+    res.status(500).json({
+      status: "error",
+      message: "Failed to reset password. Please try again later.",
+    });
+  }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  logoutUser,
+  sendResetPasswordOTP,
+  resetPassword,
+};
