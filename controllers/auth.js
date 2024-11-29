@@ -1,6 +1,7 @@
 const { query } = require("../config/dataBase");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const { v4: uuidv4 } = require("uuid");
 
 const registerUser = async (req, res) => {
   const { name, email, pass } = req.body;
@@ -21,7 +22,7 @@ const registerUser = async (req, res) => {
         message: "Invalid email format. Please provide a valid email address.",
       });
     }
-    
+
     const existingUser = await query("SELECT * FROM users WHERE email = ?", [
       email,
     ]);
@@ -34,11 +35,12 @@ const registerUser = async (req, res) => {
       });
     }
 
+    const userId = uuidv4();
     const hashedPass = await bcrypt.hash(pass, 10);
-    
+
     await query(
-      "INSERT INTO users (name, email, pass) VALUES (?, ?, ?)",
-      [name, email, hashedPass]
+      "INSERT INTO users (user_id, name, email, pass) VALUES (?, ?, ?, ?)",
+      [userId, name, email, hashedPass]
     );
 
     res.status(201).json({
@@ -86,7 +88,7 @@ const loginUser = async (req, res) => {
       const isPasswordValid = await bcrypt.compare(pass, password_hash);
 
       if (isPasswordValid) {
-        const tokenPayload = { user_id, user_email: email };
+        const tokenPayload = { user_id, user_email: email, jti: uuidv4() };
         const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
           expiresIn: "1h",
         });
@@ -100,8 +102,7 @@ const loginUser = async (req, res) => {
       } else {
         res.status(401).json({
           status: "error",
-          message:
-            "Invalid email or password. Please check your credentials.",
+          message: "Invalid email or password. Please check your credentials.",
         });
       }
     }
@@ -111,4 +112,34 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser };
+const logoutUser = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(400).json({
+        status: "error",
+        message: "No token provided. User is not logged in.",
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const tokenId = decoded.jti;
+
+    await query(
+      "INSERT INTO blacklisted_tokens (token_id, user_id) VALUES (?, ?)",
+      [tokenId, decoded.user_id]
+    );
+
+    res.status(200).json({
+      status: "success",
+      message: "You have successfully logged out. Your session has been securely terminated.",
+    });
+  } catch (err) {
+    console.error("Error:", err.message);
+    res
+      .status(500)
+      .json({ status: "error", message: "Failed to log out user" });
+  }
+};
+
+module.exports = { registerUser, loginUser, logoutUser };
