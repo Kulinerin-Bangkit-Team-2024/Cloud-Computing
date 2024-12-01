@@ -169,22 +169,32 @@ const sendResetPasswordOTP = async (req, res) => {
     const userId = user.user_id;
 
     const existingOtp = await query(
-      "SELECT * FROM password_reset_otp WHERE user_id = ? AND is_used = false",
+      "SELECT * FROM password_reset_otp WHERE user_id = ?",
       [userId]
     );
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const createdAt = new Date();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     if (existingOtp.length > 0) {
-      await query(
-        "UPDATE password_reset_otp SET otp = ?, expires_at = ? WHERE user_id = ?",
-        [otp, expiresAt, userId]
-      );
+      const otpRecord = existingOtp[0];
+
+      if (otpRecord.is_used || otpRecord.expires_at < new Date()) {
+        await query(
+          "UPDATE password_reset_otp SET otp = ?, created_at = ?, expires_at = ?, is_used = false WHERE user_id = ?",
+          [otp, createdAt, expiresAt, userId]
+        );
+      } else {
+        return res.status(400).json({
+          status: "error",
+          message: "You already have a valid OTP request. Please check your email.",
+        });
+      }
     } else {
       await query(
-        "INSERT INTO password_reset_otp (user_id, otp, expires_at) VALUES (?, ?, ?)",
-        [userId, otp, expiresAt]
+        "INSERT INTO password_reset_otp (user_id, otp, created_at, expires_at, is_used) VALUES (?, ?, ?, ?, false)",
+        [userId, otp, createdAt, expiresAt]
       );
     }
 
