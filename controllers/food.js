@@ -12,7 +12,7 @@ const predictFood = async (req, res) => {
       });
     }
 
-    const flaskApiUrl = process.env.FLASK_API_URL;
+    const flaskApiUrl = process.env.ML_MODEL;
     if (!flaskApiUrl) {
       return res.status(500).json({
         status: "error",
@@ -37,8 +37,7 @@ const predictFood = async (req, res) => {
     const queryResult = await query(sqlQuery, [`%${predictedFoodName}%`]);
 
     return res.status(200).json({
-      predictedFoodName: predictedFoodName,
-      databaseResults: queryResult,
+      queryResult,
     });
 
   } catch (error) {
