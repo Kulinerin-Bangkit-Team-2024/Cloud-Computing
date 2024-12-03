@@ -73,7 +73,6 @@ const searchFoodsByName = async (req, res) => {
   }
 };
 
-// Search food by place of origin (query param)
 const searchFoodsByOrigin = async (req, res) => {
   const { origin } = req.query;
   if (!origin) {
