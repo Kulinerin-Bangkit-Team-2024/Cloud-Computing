@@ -134,19 +134,51 @@ const predictFood = async (req, res) => {
       },
     });
 
+    // Debug: Log response from Flask
+    console.log("Response from Flask API:", response.data);
+
+    // Validasi response dari Flask API
+    if (!response.data || !response.data.predicted_class_name) {
+      return res.status(500).json({
+        status: "error",
+        message: "Invalid response from Flask API.",
+        flaskResponse: response.data,  // Kirimkan data response dari Flask untuk debugging
+      });
+    }
+
     const predictedFoodName = response.data.predicted_class_name;
-    const sqlQuery = "SELECT food_id, food_name, description FROM foods WHERE food_name LIKE ?";
+
+    const sqlQuery = `
+      SELECT food_id, food_name, description 
+      FROM foods 
+      WHERE food_name LIKE ? 
+    `;
     const queryResult = await query(sqlQuery, [`%${predictedFoodName}%`]);
 
-    return res.status(200).json({
-      queryResult,
-    });
+    if (!queryResult || queryResult.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "No matching food found in the database.",
+      });
+    }
 
+    return res.status(200).json({
+      status: "success",
+      data: {
+        predictedFoodName,
+        queryResult,
+      },
+    });
   } catch (error) {
-    console.error("Error during prediction:", error);
-    return res.status(500).json({ error: "An error occurred during prediction." });
+    console.error("Error during prediction:", error.message);
+    return res.status(500).json({
+      status: "error",
+      message: "An error occurred during prediction.",
+    });
   }
 };
+
+
 
 module.exports = { 
   getAllFoods,
