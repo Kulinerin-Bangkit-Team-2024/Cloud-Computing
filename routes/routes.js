@@ -17,11 +17,11 @@ router.post("/forgot-password", sendResetPasswordOTP);
 router.put("/reset-password", resetPassword);
 
 // Food
-router.get('/foods', authenticateToken, getAllFoods);
-router.get('/foods/:id', getFoodById);
-router.get('/foods/search/name', searchFoodsByName);
-router.get('/foods/search/origin', searchFoodsByOrigin);
-router.post("/foods/predict", upload.single('image'), validateFile, predictFood);
+router.get("/foods", authenticateToken, getAllFoods);
+router.get("/foods/:id", authenticateToken, getFoodById);
+router.get("/foods/search/name", authenticateToken, searchFoodsByName);
+router.get("/foods/search/origin", authenticateToken, searchFoodsByOrigin);
+router.post("/foods/predict", authenticateToken, upload.single('image'), validateFile, predictFood);
 
 // User
 router.get("/user/profile", authenticateToken, getUserById);
