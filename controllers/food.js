@@ -6,10 +6,16 @@ require('dotenv').config();
 const getAllFoods = async (req, res) => {
   try {
     const result = await query("SELECT food_id, food_name, place_of_origin, food_image FROM foods");
+
+    const foods = result.map(food => ({
+      ...food,
+      food_image: food.food_image.trim(),
+    }));
+
     res.status(200).json({
       status: "success",
       message: "Foods retrieved successfully",
-      foods: result,
+      foods,
     });
   } catch (err) {
     console.error("Error:", err.message);
@@ -23,10 +29,15 @@ const getFoodById = async (req, res) => {
   try {
     const result = await query("SELECT * FROM foods WHERE food_id = ?", [id]);
     if (result.length > 0) {
+      const food = {
+        ...result[0],
+        food_image: result[0].food_image.trim(), 
+      };
+
       res.status(200).json({
         status: "success",
         message: "Food retrieved successfully",
-        food: result[0],
+        food,
       });
     } else {
       res.status(404).json({
@@ -39,6 +50,7 @@ const getFoodById = async (req, res) => {
     res.status(500).json({ status: "error", message: "Internal Server Error" });
   }
 };
+
 
 const searchFoodsByName = async (req, res) => {
   const { name } = req.query;
@@ -55,11 +67,17 @@ const searchFoodsByName = async (req, res) => {
       "SELECT food_id, food_name, place_of_origin, food_image FROM foods WHERE food_name LIKE ?",
       [`%${name}%`]
     );
+
     if (result.length > 0) {
+      const foods = result.map(food => ({
+        ...food,
+        food_image: food.food_image.trim(),
+      }));
+
       res.status(200).json({
         status: "success",
         message: "Foods retrieved successfully",
-        foods: result,
+        foods,
       });
     } else {
       res.status(404).json({
@@ -72,6 +90,7 @@ const searchFoodsByName = async (req, res) => {
     res.status(500).json({ status: "error", message: "Internal Server Error" });
   }
 };
+
 
 const searchFoodsByOrigin = async (req, res) => {
   const { origin } = req.query;
@@ -87,11 +106,17 @@ const searchFoodsByOrigin = async (req, res) => {
       "SELECT food_id, food_name, place_of_origin, food_image FROM foods WHERE place_of_origin LIKE ?",
       [`%${origin}%`]
     );
+
     if (result.length > 0) {
+      const foods = result.map(food => ({
+        ...food,
+        food_image: food.food_image.trim(),
+      }));
+
       res.status(200).json({
         status: "success",
         message: "Foods retrieved successfully",
-        foods: result,
+        foods,
       });
     } else {
       res.status(404).json({
@@ -104,6 +129,7 @@ const searchFoodsByOrigin = async (req, res) => {
     res.status(500).json({ status: "error", message: "Internal Server Error" });
   }
 };
+
 
 const predictFood = async (req, res) => {
   try {

@@ -1,4 +1,4 @@
-const allowedFileTypes = ["image/jpeg", "image/png", "image/gif"];
+const allowedFileTypes = ["image/jpeg", "image/png", "image/jpg"];
 const maxFileSize = 5 * 1024 * 1024;
 
 const validateFile = (req, res, next) => {
