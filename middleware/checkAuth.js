@@ -9,7 +9,6 @@ const checkBlacklist = async (tokenId) => {
   return result.length > 0;
 };
 
-
 const authenticateToken = async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
 

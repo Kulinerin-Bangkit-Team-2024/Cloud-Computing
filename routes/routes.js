@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const router = express.Router();
-const { registerUser, loginUser, logoutUser, sendResetPasswordOTP, resetPassword } = require("../controllers/auth");
+const { registerUser, loginUser, logoutUser, sendResetPasswordOTP, resetPassword, checkBlacklist } = require("../controllers/auth");
 const { getAllFoods, getFoodById, searchFoodsByName, searchFoodsByOrigin, predictFood } = require("../controllers/food")
 const { getUserById, editUserProfile } = require("../controllers/user");
 const authenticateToken = require("../middleware/checkAuth");
@@ -15,6 +15,7 @@ router.post("/login", loginUser);
 router.post("/logout", authenticateToken, logoutUser);
 router.post("/forgot-password", sendResetPasswordOTP);
 router.put("/reset-password", resetPassword);
+router.get("/check-token", checkBlacklist);
 
 // Food
 router.get("/foods", authenticateToken, getAllFoods);

@@ -241,7 +241,6 @@ const sendResetPasswordOTP = async (req, res) => {
 
 const resetPassword = async (req, res) => {
   const { email, otp, newpass } = req.body;
-  
   if (!email || !otp || !newpass) {
     return res.status(400).json({
       status: "error",
@@ -312,10 +311,65 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const checkBlacklist = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(400).json({
+        status: "error",
+        message: "Authorization token is missing",
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const tokenId = decoded.jti;
+
+    if (!tokenId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Token ID is required",
+      });
+    }
+
+    const result = await query(
+      "SELECT * FROM blacklisted_tokens WHERE token_id = ?",
+      [tokenId]
+    );
+
+    if (result.length > 0) {
+      return res.status(200).json({
+        status: "success",
+        message: "Token found in blacklist",
+      });
+    } else {
+      return res.status(404).json({
+        status: "error",
+        message: "Token not found in blacklist",
+      });
+    }
+  } catch (err) {
+    console.error("Error:", err.message);
+
+    if (err.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        status: "error",
+        message: "Invalid or expired token",
+      });
+    }
+
+    return res.status(500).json({
+      status: "error",
+      message: "Internal Server Error. Failed to check token in blacklist.",
+    });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   logoutUser,
   sendResetPasswordOTP,
   resetPassword,
+  checkBlacklist,
 };
