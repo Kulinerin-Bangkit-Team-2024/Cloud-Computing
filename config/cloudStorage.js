@@ -2,6 +2,7 @@ const { Storage } = require("@google-cloud/storage");
 const { v4: uuidv4 } = require("uuid");
 const multer = require("multer");
 const path = require("path");
+const sharp = require("sharp");
 
 const keyFilePath = path.resolve(__dirname, "../key.json");
 const gcs = new Storage({ keyFilename: keyFilePath });
@@ -48,8 +49,13 @@ ImgUpload.handleUpload = async (req, res, next) => {
   const file = bucket.file(gcsname);
 
   try {
+    const compressedBuffer = await sharp(req.file.buffer)
+      .resize(1024)
+      .jpeg({ quality: 80 })
+      .toBuffer();
+
     console.log(`Uploading file ${req.file.originalname} as ${gcsname}`);
-    await file.save(req.file.buffer, {
+    await file.save(compressedBuffer, {
       metadata: {
         contentType: req.file.mimetype,
         metadata: { uploadDate: new Date().toISOString() },
