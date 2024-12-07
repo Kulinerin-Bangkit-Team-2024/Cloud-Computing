@@ -14,7 +14,7 @@ const validateFile = (req, res, next) => {
   if (!allowedFileTypes.includes(file.mimetype)) {
     return res.status(400).json({
       status: "error",
-      message: "Invalid file type. Only JPEG, PNG, and GIF are allowed.",
+      message: "Invalid file type. Only JPEG, PNG, and JPG are allowed.",
     });
   }
 
