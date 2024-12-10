@@ -49,12 +49,17 @@
    ```bash
    https://github.com/Kulinerin-Bangkit-Team-2024/Cloud-Computing.git
 
-2. Install :
+2. Navigate to the project directory:
+
+   ```bash
+   cd Cloud-Computing
+
+3. Install dependencies:
 
    ```bash
    npm install
 
-3. create .env from .env.example file
+4. create .env from .env.example file
 
    ```bash
    # Database configuration
@@ -76,6 +81,14 @@
    EMAIL_USER='your-email-address'
    EMAIL_PASS='your-email-password'
 
-5. Start :
+5. Set up a Google Cloud service account:
+   ```bash
+   1. Go to the Google Cloud Console.
+   2. Navigate to IAM & Admin > Service Accounts.
+   3. Create a service account with a role allowing file uploads to your bucket (e.g., "Storage Object Admin").
+   4. Download the key as a JSON file.
+   5. Save it in the project root as key.json.
+
+6. Start :
    ```bash
    node server.js
