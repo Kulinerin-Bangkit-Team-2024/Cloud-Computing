@@ -160,22 +160,20 @@ const predictFood = async (req, res) => {
       },
     });
 
-    // Debug: Log response from Flask
     console.log("Response from Flask API:", response.data);
 
-    // Validasi response dari Flask API
     if (!response.data || !response.data.predicted_class_name) {
       return res.status(500).json({
         status: "error",
         message: "Invalid response from Flask API.",
-        flaskResponse: response.data,  // Kirimkan data response dari Flask untuk debugging
+        flaskResponse: response.data,
       });
     }
 
     const predictedFoodName = response.data.predicted_class_name;
 
     const sqlQuery = `
-      SELECT food_id, food_name, description 
+      SELECT food_id, food_name, place_of_origin, description 
       FROM foods 
       WHERE food_name LIKE ? 
     `;
