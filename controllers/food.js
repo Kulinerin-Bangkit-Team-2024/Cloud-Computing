@@ -163,9 +163,9 @@ const predictFood = async (req, res) => {
     console.log("Response from Flask API:", response.data);
 
     if (!response.data || !response.data.predicted_class_name) {
-      return res.status(500).json({
+      return res.status(400).json({
         status: "error",
-        message: "Invalid response from Flask API.",
+        message: "Please upload a valid image.",
         flaskResponse: response.data,
       });
     }
