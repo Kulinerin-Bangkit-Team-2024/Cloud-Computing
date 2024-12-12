@@ -166,7 +166,6 @@ const predictFood = async (req, res) => {
       return res.status(400).json({
         status: "error",
         message: "Please upload a valid image.",
-        flaskResponse: response.data,
       });
     }
 
