@@ -42,6 +42,10 @@
    <span style="font-size: 18px; color: #3366cc;">Location : asia-southeast2 (Jakarta)</span>
 </pre>
 
+## API Documentation
+The KulinerIn API Documentation provides detailed information about all available endpoints, including authentication, user profile, food discovery, and AI-powered food prediction features.
+Explore it here: [KulinerIn API Documentation](https://www.postman.com/bangkit-capstone-kulinerin/kulinerin-workspace/documentation/leceuv3/kulinerin-api-documentation)
+
 ## Installation
 
 1. Clone the repository:
